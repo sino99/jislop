@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>π — визуализация иррациональности (только HTML+CSS)</title>
+<style>
+  :root{
+    --bg: #0f1220;
+    --fg: #e6e9f2;
+    --muted: #9aa3b2;
+    --accent: #7aa2ff;
+    --accent2:#8ef0c5;
+    --chip:#1a1f33;
+    --ring:#2c3357;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body{
+    margin:0;
+    font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+    color: var(--fg);
+    background:
+      radial-gradient(1200px 700px at 10% -10%, #1b1f36 0%, transparent 50%),
+      radial-gradient(900px 500px at 110% 10%, #18203b 0%, transparent 50%),
+      linear-gradient(180deg, #0b0e1a 0%, #0f1220 100%);
+    overflow-x: hidden;
+  }
+
+  .wrap{
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 24px;
+  }
+
+  header{
+    display: grid;
+    gap: 10px;
+    margin-bottom: 26px;
+  }
+  h1{
+    margin:0;
+    font-weight: 800;
+    letter-spacing: .2px;
+    font-size: clamp(28px, 4vw, 40px);
+    line-height: 1.15;
+  }
+  .sub{
+    color: var(--muted);
+    font-size: clamp(14px, 2.2vw, 16px);
+  }
+
+  /* карточка с окружностью */
+  .card{
+    background: linear-gradient(180deg, #121735 0%, #0e132b 100%);
+    border: 1px solid #1b2244;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 920px){
+    .grid{ grid-template-columns: 1fr; }
+  }
+
+  .circleBox{
+    position: relative;
+    aspect-ratio: 1/1;
+    border-radius: 20px;
+    background: radial-gradient(160px 160px at 25% 30%, rgba(122,162,255,.25), transparent 70%),
+                radial-gradient(220px 220px at 70% 70%, rgba(142,240,197,.15), transparent 70%),
+                #0b1030;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .circle{
+    width: min(70%, 420px);
+    aspect-ratio: 1/1;
+    border-radius: 50%;
+    border: 6px solid var(--accent);
+    box-shadow: 0 0 0 10px rgba(122,162,255,.08), 0 0 40px rgba(122,162,255,.25) inset;
+    position: relative;
+    isolation: isolate;
+  }
+  /* диаметр — пунктир */
+  .diam{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 0;
+    transform: translate(-50%, -50%);
+    border-top: 4px dashed var(--accent2);
+    opacity: .9;
+  }
+  .label{
+    position: absolute;
+    font-size: 13px;
+    color: var(--fg);
+    background: rgba(17,24,56,.7);
+    border: 1px solid #263058;
+    padding: 6px 10px;
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+    white-space: nowrap;
+  }
+  .labC { top: -14px; left: 50%; transform: translateX(-50%); }
+  .labD { top: 50%; left: 50%; transform: translate(-50%, -50%) translateY(16px); }
+  .ratio{
+    position: absolute;
+    bottom: -12px; left: 50%;
+    transform: translateX(-50%);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* бегущая строка цифр π без JS */
+  .tape{
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid #1a2246;
+    background: #0b1030;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .tapeHeader{
+    display:flex; align-items:center; gap:10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #1a2246;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .chip{
+    background: var(--chip);
+    color: var(--fg);
+    border: 1px solid #253056;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+  .scroll{
+    position: relative;
+    display: flex;
+    gap: 40px;
+    padding: 14px;
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .row{
+    display: flex;
+    min-width: 200%;
+    animation: slide 28s linear infinite;
+    white-space: pre;
+    font: 600 16px/1.8 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    letter-spacing: .6px;
+  }
+  .row.rev{ animation-direction: reverse; opacity: .9; }
+  @keyframes slide {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .pi{
+    color: #d2d8ff;
+  }
+  .dots::after{ content: " …"; color: var(--muted); }
+
+  /* блок фактов */
+  .facts{
+    display:grid;
+    grid-template-columns: repeat(3,minmax(0,1fr));
+    gap:14px;
+    margin-top: 16px;
+  }
+  @media (max-width: 800px){ .facts{ grid-template-columns: 1fr; } }
+  .fact{
+    background: linear-gradient(180deg,#111638 0%, #0d1230 100%);
+    border: 1px solid #1b2244;
+    border-radius: 14px;
+    padding: 14px;
+    font-size: 14px;
+    color: var(--fg);
+  }
+  .fact b{ color: #cfe3ff; }
+  .badge{
+    display:inline-block; margin-bottom:6px;
+    font-size: 11px; letter-spacing:.4px; text-transform: uppercase;
+    color: var(--accent2);
+    background: rgba(142,240,197,.08);
+    border: 1px solid rgba(142,240,197,.25);
+    padding: 3px 8px; border-radius: 999px;
+  }
+
+  /* подсказка при наведении */
+  .hint{
+    position: relative; cursor: help;
+    border-bottom: 1px dotted var(--accent2);
+  }
+  .hint:hover::after{
+    content: attr(data-tip);
+    position: absolute; left: 0; top: 110%;
+    white-space: nowrap;
+    background: #0e1330; color: var(--fg);
+    border: 1px solid #27305a;
+    padding: 6px 10px; border-radius: 10px;
+    box-shadow: 0 10px 24px rgba(0,0,0,.35);
+    z-index: 5; transform: translateY(4px);
+  }
+
+  footer{
+    margin-top: 22px;
+    color: var(--muted);
+    font-size: 12px;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>π — иррациональное число</h1>
+      <div class="sub">
+        Иррациональность означает: десятичная запись <span class="hint" data-tip="Бесконечная десятичная дробь без конечного или периодического повторения">бесконечна и непериодична</span>.
+        Ниже — наглядная демонстрация.
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="grid">
+        <div class="circleBox">
+          <div class="circle" aria-label="Окружность">
+            <div class="label labC">Длина окружности <b>C</b></div>
+            <div class="diam"></div>
+            <div class="label labD">Диаметр <b>D</b></div>
+            <div class="ratio">Отношение C/D = π ≈ 3,14…</div>
+          </div>
+        </div>
+
+        <div class="tape" aria-label="Бесконечная непериодическая десятичная дробь π">
+          <div class="tapeHeader">
+            <span class="chip">десятичная запись</span>
+            <span>нет повторяющегося периода — <b>иррационально</b></span>
+          </div>
+          <div class="scroll">
+            <!-- Две «ленты» подряд для бесшовной прокрутки -->
+            <div class="row">
+              <span class="pi">π = 3.1415926535 8979323846 2643383279 5028841971 6939937510 5820974944 5923078164 0628620899 8628034825 3421170679 8214808651 3282306647 0938446095 5058223172 5359408128 4811174502 8410270193 8521105559 6446229489 5493038196 4428810975 6659334461 2847564823 3786783165 2712019091 459...</span>
+              <span class="pi">π = 3.1415926535 8979323846 2643383279 5028841971 6939937510 5820974944 5923078164 0628620899 8628034825 3421170679 8214808651 3282306647 0938446095 5058223172 5359408128 4811174502 8410270193 8521105559 6446229489 5493038196 4428810975 6659334461 2847564823 3786783165 2712019091 459...</span>
+            </div>
+          </div>
+          <div class="scroll">
+            <div class="row rev">
+              <span>… 0711270004 2699392279 6782354781 6360093417 2164121992 7260426992 2796782354 7816360093 4172164121 992…</span>
+              <span>… 0711270004 2699392279 6782354781 6360093417 2164121992 7260426992 2796782354 7816360093 4172164121 992…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="facts">
+        <div class="fact">
+          <span class="badge">Бесконечность</span>
+          Запись π не заканчивается: после 3,14 следуют бесконечно многие цифры — <b>3.14159…</b>
+        </div>
+        <div class="fact">
+          <span class="badge">Непериодичность</span>
+          В отличие от рациональных дробей (например, 1/3 = 0,333…), у π <b>нет периодического блока</b> цифр.
+        </div>
+        <div class="fact">
+          <span class="badge">Смысл</span>
+          π — отношение длины окружности к диаметру для любого круга. Это константа природы, а не «длинная дробь».
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Только HTML+CSS. Лента цифр движется за счёт CSS-анимации, показывая бесконечность и отсутствие периода.
+    </footer>
+  </div>
+</body>
+</html>
